@@ -11,37 +11,23 @@ database logs
 """
 from pymongo import MongoClient
 
+# MongoDB connection
+client = MongoClient('mongodb://localhost:27017/')  # Replace 'localhost:27017' with your MongoDB server address
+db = client['logs']  # Connect to the 'logs' database
+collection = db['nginx']  # Connect to the 'nginx' collection
 
-METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-PIPE = [{"$group": {"_id": "$ip", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}, {"$limit": 10}]
+# Get number of documents in the collection
+total_logs = collection.count_documents({})
 
+# Get methods count
+methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+method_counts = [collection.count_documents({"method": method}) for method in methods]
 
-def log_stats(mongo_collection, option=None):
-    """
-    Prototype: def log_stats(mongo_collection, option=None):
-    Provides some stats about Nginx logs stored in MongoDB
-    """
-    items = {}
-    if option:
-        value = mongo_collection.count_documents(
-            {"method": {"$regex": option}})
-        print(f"\tmethod {option}: {value}")
-        return
+# Get count of logs with method=GET and path=/status
+special_logs_count = collection.count_documents({"method": "GET", "path": "/status"})
 
-    result = mongo_collection.count_documents(items)
-    print(f"{result} logs")
-    print("Methods:")
-    for method in METHODS:
-        log_stats(nginx_collection, method)
-    status_check = mongo_collection.count_documents({"path": "/status"})
-    print(f"{status_check} status check")
-    print("IPs:")
+# Print the statistics
+print(f"{total_logs} logs")
+print("\t" + "\n\t".join([f"{count} {method}" for method, count in zip(methods, method_counts)]))
+print(f"\t{special_logs_count} method=GET path=/status")
 
-    for ip in mongo_collection.aggregate(PIPE):
-        print(f"\t{ip.get('_id')}: {ip.get('count')}")
-
-
-if __name__ == "__main__":
-    nginx_collection = MongoClient('mongodb://127.0.0.1:27017').logs.nginx
-    log_stats(nginx_collection)
