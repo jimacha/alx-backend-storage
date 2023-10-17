@@ -27,7 +27,8 @@ method_counts = [collection.count_documents({"method": method}) for method in me
 special_logs_count = collection.count_documents({"method": "GET", "path": "/status"})
 
 # Print the statistics
-print(f"{total_logs} logs")
-print("\t" + "\n\t".join([f"{count} {method}" for method, count in zip(methods, method_counts)]))
-print(f"\t{special_logs_count} method=GET path=/status")
-
+print(f"first line: {total_logs} logs where {total_logs} is the number of documents in this collection")
+print("second line: Methods:")
+for method, count in zip(methods, method_counts):
+    print(f"\t{count}\t{method}")
+print(f"\tone line with the number of documents with:\n\tmethod=GET\n\tpath=/status\n{special_logs_count}")
